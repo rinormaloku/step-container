@@ -1,0 +1,114 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-step/paper-step.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../iron-icons/editor-icons.html">
+<script src="../showdown/dist/showdown.min.js"></script>
+<script src="../mousetrap/mousetrap.min.js"></script>
+
+<dom-module id="step-container">
+    <template>
+        <style is="custom-style" include="iron-flex"></style>
+        <style is="custom-style" include="iron-flex-alignment"></style>
+        <style>
+            :host {
+                display: block;
+            }
+
+            #editor {
+                padding: 10px 15px;
+                opacity: 0.7;
+            }
+
+            #editor:hover {
+                opacity: 1;
+            }
+
+            .hidden {
+                position: absolute;
+                visibility: hidden;
+            }
+        </style>
+
+        <!-- New Paper steps will be added here -->
+        <div id="steps"></div>
+
+        <paper-material id="editor" on-dblclick="switchToEditor" class="horizontal center-justified layout"
+                        elevation="[[elevation]]">
+            <iron-icon id="addIcon" icon="add-circle"></iron-icon>
+            <textarea id="editorField" on-focusout="createPaperStep" class="flex self-stretch hidden"></textarea>
+        </paper-material>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'step-container',
+
+            properties: {
+                prop1: {
+                    type: String,
+                    value: 'step-container',
+                },
+            },
+            ready: function () {
+                this.listenHotkeys();
+                this.listenForStepChanges();
+
+            },
+            switchToEditor: function () {
+                var editorfield = this.$.editorField,
+                        addIcon = this.$.addIcon;
+                this.toggleClass('hidden', false, editorfield);
+                this.toggleClass('hidden', true, addIcon);
+                editorfield.focus();
+            },
+            createPaperStep: function () {
+                var editorfield = this.$.editorField,
+                        markdown = editorfield.value,
+                        stepsContainer = this.$.steps,
+                        addIcon = this.$.addIcon;
+                if(markdown!==''){
+                    //Create Step and append as last element in the container if person wrote sth
+                    var toInsert = document.createElement('div');
+                    toInsert.innerHTML = this.prepareStepContent(markdown);
+                    Polymer.dom(stepsContainer).appendChild(toInsert);
+                }
+
+                //Remove editor field and display the Add Icon
+                this.toggleClass('hidden', true, editorfield);
+                this.toggleClass('hidden', false, addIcon);
+                editorfield.value = '';
+            },
+            pickNumberOfStep: function () {
+                return Polymer.dom(this.$.steps).children.length+1;
+            },
+            prepareStepContent: function (markdown) {
+                return '<paper-step step="'+  this.pickNumberOfStep()  + '" elevation="1" description="' + markdown  +
+                        '"><div></div></paper-step>';
+            },
+            listenForStepChanges: function () {
+                var stepContainer = this.$.steps;
+                new MutationObserver(function () {
+                    var paperSteps = document.getElementsByTagName('paper-step');
+                    var stepAmount = paperSteps.length;
+                    for( var i = 0; i< stepAmount; i++){
+                        if(paperSteps[i].textContent.trim().length<=3){
+                            Polymer.dom(stepContainer).removeChild(document.querySelector('#steps div:nth-child('+(i+1)+')'));
+                            Polymer.dom.flush();
+                            for(var x = i; x < stepAmount; x++ ){
+                                paperSteps[x].setAttribute('step', (paperSteps[x].getAttribute('step')-1))
+                            }
+                            break;
+                        }
+                    }
+                }).observe(stepContainer, { childList: true, subtree: true, attributes: true})
+            },
+            listenHotkeys: function () {
+                var editor = this.$.editor;
+                Mousetrap.bind('shift+k', function () {
+                    editor.dispatchEvent(new MouseEvent('dblclick'));
+                    return false;
+                });
+            }
+        });
+    </script>
+</dom-module>
