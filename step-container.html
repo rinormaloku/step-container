@@ -2,7 +2,6 @@
 <link rel="import" href="../paper-step/paper-step.html">
 <link rel="import" href="../iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../iron-icons/editor-icons.html">
-<script src="../showdown/dist/showdown.min.js"></script>
 <script src="../mousetrap/mousetrap.min.js"></script>
 
 <dom-module id="step-container">
@@ -30,7 +29,7 @@
         </style>
 
         <!-- New Paper steps will be added here -->
-        <div id="steps"></div>
+        <div id="stepsContainer"></div>
 
         <paper-material id="editor" on-dblclick="switchToEditor" class="horizontal center-justified layout"
                         elevation="[[elevation]]">
@@ -64,7 +63,7 @@
             createPaperStep: function () {
                 var editorfield = this.$.editorField,
                         markdown = editorfield.value,
-                        stepsContainer = this.$.steps,
+                        stepsContainer = this.$.stepsContainer,
                         addIcon = this.$.addIcon;
                 if(markdown!==''){
                     //Create Step and append as last element in the container if person wrote sth
@@ -79,20 +78,20 @@
                 editorfield.value = '';
             },
             pickNumberOfStep: function () {
-                return Polymer.dom(this.$.steps).children.length+1;
+                return Polymer.dom(this.$.stepsContainer).children.length+1;
             },
             prepareStepContent: function (markdown) {
                 return '<paper-step step="'+  this.pickNumberOfStep()  + '" elevation="1" description="' + markdown  +
                         '"><div></div></paper-step>';
             },
             listenForStepChanges: function () {
-                var stepContainer = this.$.steps;
+                var stepContainer = this.$.stepsContainer;
                 new MutationObserver(function () {
                     var paperSteps = document.getElementsByTagName('paper-step');
                     var stepAmount = paperSteps.length;
                     for( var i = 0; i< stepAmount; i++){
                         if(paperSteps[i].textContent.trim().length<=3){
-                            Polymer.dom(stepContainer).removeChild(document.querySelector('#steps div:nth-child('+(i+1)+')'));
+                            Polymer.dom(stepContainer).removeChild(document.querySelector('#stepsContainer > div:nth-child('+(i+1)+')'));
                             Polymer.dom.flush();
                             for(var x = i; x < stepAmount; x++ ){
                                 paperSteps[x].setAttribute('step', (paperSteps[x].getAttribute('step')-1))
